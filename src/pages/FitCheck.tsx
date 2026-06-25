@@ -17,11 +17,42 @@ export function FitCheck() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isSelfieMode, setIsSelfieMode] = useState(true);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot();
     if (imageSrc) setImage(imageSrc);
   }, [webcamRef]);
+
+  const handleTimerClick = () => {
+    setTimerSeconds(prev => {
+      if (prev === 0) return 3;
+      if (prev === 3) return 5;
+      if (prev === 5) return 10;
+      return 0;
+    });
+  };
+
+  const handleCaptureClick = () => {
+    if (countdown !== null) return;
+    if (timerSeconds > 0) {
+      setCountdown(timerSeconds);
+      let currentCount = timerSeconds;
+      const interval = setInterval(() => {
+        currentCount -= 1;
+        if (currentCount <= 0) {
+          clearInterval(interval);
+          setCountdown(null);
+          capture();
+        } else {
+          setCountdown(currentCount);
+        }
+      }, 1000);
+    } else {
+      capture();
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,8 +117,25 @@ export function FitCheck() {
                 screenshotFormat="image/jpeg"
                 className="absolute inset-0 w-full h-full object-cover"
                 videoConstraints={{ facingMode: isSelfieMode ? "user" : "environment" }}
-                mirrored={isSelfieMode}
+                mirrored={false}
               />
+
+              {/* Countdown Overlay */}
+              <AnimatePresence>
+                {countdown !== null && (
+                  <motion.div 
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.5, opacity: 0 }}
+                    key={countdown}
+                    className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none"
+                  >
+                    <span className="text-[120px] font-bold text-white drop-shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+                      {countdown}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               
               {/* Camera Overlay Controls */}
               <div className="absolute inset-x-0 bottom-0 p-8 flex justify-between items-end bg-gradient-to-t from-black/60 via-black/20 to-transparent">
@@ -103,18 +151,24 @@ export function FitCheck() {
                 
                 {/* Center Shutter */}
                 <button 
-                  onClick={capture}
+                  onClick={handleCaptureClick}
+                  disabled={countdown !== null}
                   className="w-20 h-20 rounded-full border-[3px] border-white/50 flex items-center justify-center p-1.5 active:scale-95 transition-transform shrink-0"
                 >
                   <div className="w-full h-full rounded-full bg-white shadow-sm" />
                 </button>
                 
                 {/* Right Controls */}
-                <div className="flex-1 flex justify-end gap-3">
+                <div className="flex-1 flex justify-end gap-3 z-50">
                   <button 
+                    onClick={handleTimerClick}
                     className="w-12 h-12 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center border border-white/20 active:scale-95 transition-transform"
                   >
-                    <Timer size={20} className="text-white" />
+                    {timerSeconds > 0 ? (
+                      <span className="text-white font-medium text-lg">{timerSeconds}s</span>
+                    ) : (
+                      <Timer size={20} className="text-white" />
+                    )}
                   </button>
                   <button 
                     onClick={() => setIsSelfieMode(!isSelfieMode)}
