@@ -179,8 +179,6 @@ export function Closet() {
                   style={{ transformOrigin: "top right" }}
                   className="absolute top-14 right-0 z-50 w-[240px] box-border bg-[rgba(20,20,20,0.75)] backdrop-blur-[32px] saturate-[150%] border border-[rgba(255,255,255,0.08)] rounded-[32px] py-4 px-5 shadow-[0_16px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 overflow-hidden"
                 >
-                  {!linkInputMode ? (
-                    <>
                       <button 
                         onClick={() => {
                           if (navigator.vibrate) navigator.vibrate(50);
@@ -204,7 +202,8 @@ export function Closet() {
                       <button 
                         onClick={() => {
                           if (navigator.vibrate) navigator.vibrate(50);
-                          setLinkInputMode(true);
+                          setShowPopover(false);
+                          setTimeout(() => setLinkInputMode(true), 150);
                         }}
                         className="flex items-center justify-start text-left w-full gap-4 group"
                       >
@@ -217,37 +216,6 @@ export function Closet() {
                         </div>
                         <ChevronRight size={18} className="text-white/20 group-hover:translate-x-1 transition-transform" />
                       </button>
-                    </>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-3 mb-1">
-                        <button 
-                          onClick={() => setLinkInputMode(false)}
-                          className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center active:scale-95 transition-all"
-                        >
-                          <ChevronRight size={16} className="text-white rotate-180" />
-                        </button>
-                        <p className="text-white font-bold text-[15px]">Paste URL</p>
-                      </div>
-                      
-                      <input 
-                        type="url" 
-                        placeholder="https://..."
-                        value={itemLink}
-                        onChange={(e) => setItemLink(e.target.value)}
-                        className="w-full bg-black/20 ring-1 ring-inset ring-white/10 rounded-[18px] px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-white/30 transition-all text-sm shadow-inner"
-                        autoFocus
-                      />
-
-                      <button 
-                        disabled={!itemLink}
-                        onClick={handleLinkUpload}
-                        className="w-full py-3 mt-1 rounded-[18px] bg-white text-black font-bold active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-lg shadow-white/20"
-                      >
-                        Fetch Item
-                      </button>
-                    </div>
-                  )}
                 </motion.div>
               </>
             )}
@@ -462,6 +430,57 @@ export function Closet() {
         )}
       </AnimatePresence>
 
+
+      {/* Import Link Bottom Sheet */}
+      <AnimatePresence>
+        {linkInputMode && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-xl"
+            onClick={() => setLinkInputMode(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-[rgba(30,30,30,0.8)] backdrop-blur-3xl rounded-[32px] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.8)] border border-[rgba(255,255,255,0.1)] flex flex-col relative"
+            >
+              <button 
+                onClick={() => setLinkInputMode(false)}
+                className="absolute top-6 right-6 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+              
+              <h3 className="text-white font-bold text-2xl mb-1">Import via Link</h3>
+              <p className="text-[rgba(255,255,255,0.6)] text-sm mb-6">Paste product URL from any store</p>
+              
+              <div className="flex flex-col gap-4 mb-6">
+                <input 
+                  type="url" 
+                  placeholder="https://..."
+                  value={itemLink}
+                  onChange={(e) => setItemLink(e.target.value)}
+                  className="w-full bg-black/40 ring-1 ring-inset ring-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-white/30 transition-all text-lg shadow-inner"
+                  autoFocus
+                />
+              </div>
+
+              <button 
+                disabled={!itemLink}
+                onClick={handleLinkUpload}
+                className="w-full py-4 rounded-2xl bg-white text-black font-bold active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg shadow-[0_4px_16px_rgba(255,255,255,0.2)]"
+              >
+                Fetch Item
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
       {/* Full-Screen Camera View */}
