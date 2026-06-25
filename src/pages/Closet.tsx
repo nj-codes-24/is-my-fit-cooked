@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Plus, Sparkles, Loader2, RefreshCw, Shirt, ShoppingBag, Search, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useWardrobeStore } from "../store";
-import { Outfit } from "../types";
+import { Outfit, WardrobeItem } from "../types";
 
 export function Closet() {
   const { items, addItem, removeItem } = useWardrobeStore();
@@ -10,6 +10,8 @@ export function Closet() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [targetCategory, setTargetCategory] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<WardrobeItem | null>(null);
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [activeTab, setActiveTab] = useState<"items" | "outfits">("items");
 
@@ -37,12 +39,13 @@ export function Closet() {
           
           addItem({
             id: Math.random().toString(36).substring(7),
-            category: randomCategory,
+            category: targetCategory || randomCategory,
             color: "Unknown",
             image: reader.result as string,
             addedAt: Date.now(),
           });
           setIsUploading(false);
+          setTargetCategory(null);
         }, 1500);
       };
       reader.readAsDataURL(file);
@@ -158,32 +161,24 @@ export function Closet() {
               ) : (
                 <>
                 <div className="pb-24">
-                  {/* Netflix Style Rows */}
-                  {['Shirts', 'T-Shirts', 'Pants', 'Shoes', 'Accessories'].map((category, idx) => {
+                  {/* Dynamic Category Rows */}
+                  {Array.from(new Set(items.map(i => i.category))).map((category, idx) => {
                     const categoryItems = items.filter(item => item.category === category);
                     return (
                     <div key={category} className="mb-8">
                       <div className="px-4 flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-white/90">{category}</h2>
-                        <ChevronRight size={20} className="text-white/30" />
+                        <h2 className="text-xl font-bold text-white/90 lowercase">{category}</h2>
                       </div>
                       <div className="flex gap-3 overflow-x-auto px-4 pb-4 snap-x hide-scrollbar">
                         {categoryItems.map((item, i) => (
-                          <div key={`${category}-${i}`} className="shrink-0 w-[140px] aspect-[4/5] bg-[#1C1C1E] border border-white/5 rounded-[24px] overflow-hidden snap-start relative group shadow-lg">
-                            <img src={item.image} alt={category} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                            <button 
-                              onClick={() => removeItem(item.id)}
-                              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md"
-                            >
-                              <Plus size={16} className="text-white rotate-45" />
-                            </button>
+                          <div 
+                            key={`${category}-${i}`} 
+                            onClick={() => setSelectedItem(item)}
+                            className="shrink-0 w-[140px] aspect-[4/5] bg-[#242426] ring-1 ring-inset ring-white/10 rounded-[24px] overflow-hidden snap-start relative shadow-lg active:scale-95 transition-transform cursor-pointer"
+                          >
+                            <img src={item.image} alt={category} className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity" />
                           </div>
                         ))}
-                        {categoryItems.length === 0 && (
-                          <div className="shrink-0 w-[140px] aspect-[4/5] bg-[#1C1C1E] border border-white/5 rounded-[24px] flex items-center justify-center shadow-lg">
-                            <span className="text-white/30 text-sm">Empty</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   )})}
@@ -259,6 +254,53 @@ export function Closet() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Item Details Modal */}
+      <AnimatePresence>
+        {selectedItem && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+            onClick={() => setSelectedItem(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-xs bg-[#1C1C1E] border border-white/10 rounded-[32px] overflow-hidden shadow-2xl flex flex-col"
+            >
+              <div className="w-full aspect-square bg-[#242426] relative">
+                <img src={selectedItem.image} alt={selectedItem.category} className="w-full h-full object-cover" />
+                <button 
+                  onClick={() => setSelectedItem(null)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 transition-colors"
+                >
+                  <Plus size={20} className="text-white rotate-45" />
+                </button>
+              </div>
+              <div className="p-6 flex flex-col gap-6">
+                <div>
+                  <h3 className="text-white font-bold text-xl capitalize">{selectedItem.category}</h3>
+                  <p className="text-white/50 text-sm mt-1">Added {new Date(selectedItem.addedAt).toLocaleDateString()}</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    removeItem(selectedItem.id);
+                    setSelectedItem(null);
+                  }}
+                  className="w-full py-4 rounded-2xl bg-red-500/10 text-red-500 font-bold active:scale-[0.98] transition-all border border-red-500/20 hover:bg-red-500/20 flex items-center justify-center gap-2"
+                >
+                  Delete Item
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

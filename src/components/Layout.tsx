@@ -22,7 +22,7 @@ export function Layout() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="absolute bottom-0 left-0 right-0 glass-panel border-t border-glass-border/50 pb-safe pt-2 px-6">
+      <nav className="absolute bottom-0 left-0 right-0 bg-[#1C1C1E]/60 backdrop-blur-2xl border-t border-white/10 pb-safe pt-2 px-6 shadow-[0_-8px_30px_rgba(0,0,0,0.3)]">
         <div className="flex justify-between items-center h-16">
           {TABS.map(({ path, icon: Icon, label }) => (
             <NavLink
