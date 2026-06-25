@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
-import { Camera, RefreshCw, Upload, Sparkles, X, Activity, Layers, Timer, SwitchCamera } from "lucide-react";
+import { Camera, RefreshCw, Upload, Sparkles, X, Activity, Layers, Timer, SwitchCamera, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../components/Layout";
 
@@ -71,16 +71,23 @@ export function FitCheck() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/analyze-outfit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: image }),
-      });
+      // Simulate an API call delay for the loading animation
+      await new Promise(resolve => setTimeout(resolve, 2500));
       
-      if (!res.ok) throw new Error("Failed to analyze");
+      const dummyData = {
+        feedback: [
+          "The monochromatic palette creates a sleek and modern silhouette.",
+          "The relaxed fit of the top provides a comfortable, effortless vibe.",
+          "Your choice of glasses adds a great intellectual edge to the look."
+        ],
+        upgrades: [
+          "Try layering with a structured overshirt or light jacket to add dimension.",
+          "A simple silver chain or pendant could break up the solid color nicely.",
+          "Swapping to a slightly more tailored pant would sharpen the overall profile."
+        ]
+      };
       
-      const data = await res.json();
-      setResult(data);
+      setResult(dummyData);
     } catch (error) {
       console.error(error);
       alert("Failed to analyze outfit. Please try again.");
@@ -97,12 +104,14 @@ export function FitCheck() {
   return (
     <div className="flex flex-col h-full overflow-hidden pb-4">
       {/* Header */}
-      <header className="px-6 py-4 flex justify-center items-center shrink-0">
-        <h1 className="font-display text-2xl tracking-tight font-bold text-white lowercase">fit check</h1>
-      </header>
+      {!image && (
+        <header className="px-6 py-4 flex justify-center items-center shrink-0">
+          <h1 className="font-display text-2xl tracking-tight font-bold text-white lowercase">fit check</h1>
+        </header>
+      )}
 
       {/* Main Content */}
-      <div className={cn("flex-1 px-2 flex flex-col items-center justify-center min-h-0", image ? "overflow-y-auto" : "overflow-hidden")}>
+      <div className={cn("flex-1 px-2 flex flex-col items-center justify-center min-h-0", !image && "overflow-hidden")}>
         {!image ? (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -115,8 +124,13 @@ export function FitCheck() {
                 audio={false}
                 ref={webcamRef}
                 screenshotFormat="image/jpeg"
+                screenshotQuality={1}
                 className="absolute inset-0 w-full h-full object-cover"
-                videoConstraints={{ facingMode: isSelfieMode ? "user" : "environment" }}
+                videoConstraints={{ 
+                  facingMode: isSelfieMode ? "user" : "environment",
+                  width: { ideal: 1080 },
+                  height: { ideal: 1920 }
+                }}
                 mirrored={false}
               />
 
@@ -189,42 +203,43 @@ export function FitCheck() {
           </motion.div>
         ) : (
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full flex flex-col gap-6 pb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed inset-0 z-[100] bg-[#111111] flex flex-col justify-start items-center pb-12 overflow-y-auto"
           >
-            <div className="w-full max-w-[400px] aspect-[9/16] mx-auto rounded-[32px] p-[1px] bg-gradient-to-b from-white/20 to-transparent shadow-2xl shadow-black/50 shrink-0">
-              <div className="w-full h-full relative rounded-[31px] overflow-hidden bg-zinc-900">
+            {/* Post-Capture Header */}
+            <header className="px-6 pt-8 pb-4 flex justify-start items-center shrink-0 w-full">
+              <button onClick={retake} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+                <ChevronLeft size={24} />
+              </button>
+            </header>
+
+            {/* Captured Image */}
+            <div className={cn("w-full relative flex justify-center items-center px-4 transition-all duration-500", result ? "mb-6 shrink-0" : "flex-1 min-h-[50vh] max-h-[70vh] mb-8")}>
+              <div className={cn("overflow-hidden shrink-0 shadow-2xl transition-all duration-500", result ? "w-[220px] aspect-square rounded-3xl" : "h-full max-w-full aspect-[9/16] rounded-[32px]")}>
                 <img src={image} alt="Captured outfit" className="w-full h-full object-cover" />
-                
-                {/* Image Controls */}
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <button 
-                    onClick={retake}
-                    className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center border border-white/20"
-                  >
-                    <X size={18} className="text-white" />
-                  </button>
-                </div>
               </div>
             </div>
 
-            {!result && !isAnalyzing && (
-              <button
-                onClick={analyzeOutfit}
-                className="w-full py-4 rounded-2xl bg-white text-black font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-              >
-                <Sparkles size={20} />
-                Analyze Outfit
-              </button>
-            )}
+            {/* Analyze Button */}
+            <div className="w-full px-6 shrink-0 flex flex-col items-center">
+              {!result && !isAnalyzing && (
+                <button
+                  onClick={analyzeOutfit}
+                  className="w-full max-w-[220px] py-3.5 rounded-full bg-white text-black font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-xl"
+                >
+                  <Sparkles size={18} />
+                  Analyze Outfit
+                </button>
+              )}
 
-            {isAnalyzing && (
-              <div className="flex flex-col items-center justify-center py-8 gap-4">
-                <Activity size={32} className="text-white animate-pulse" />
-                <p className="text-white/60 text-sm animate-pulse">Stylist is thinking...</p>
-              </div>
-            )}
+              {isAnalyzing && (
+                <div className="flex flex-col items-center justify-center py-4 gap-4">
+                  <Activity size={32} className="text-white animate-pulse" />
+                  <p className="text-white/60 text-sm animate-pulse">Stylist is thinking...</p>
+                </div>
+              )}
+            </div>
 
             {/* Results */}
             <AnimatePresence>
@@ -232,16 +247,16 @@ export function FitCheck() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col gap-6 w-full"
+                  className="flex flex-col gap-6 w-full px-6"
                 >
-                  <div className="glass-panel p-6 rounded-3xl space-y-4">
+                  <div className="bg-[#1C1C1E] border border-white/10 p-6 rounded-[24px] space-y-4 shadow-lg">
                     <h3 className="font-display font-medium text-lg flex items-center gap-2 text-white">
                       <Layers size={18} className="text-white/60" />
                       Style Analysis
                     </h3>
                     <ul className="space-y-3">
                       {result.feedback.map((point, i) => (
-                        <li key={i} className="text-sm text-white/80 leading-relaxed flex items-start gap-3">
+                        <li key={i} className="text-[15px] text-white/80 leading-relaxed flex items-start gap-3">
                           <span className="w-1.5 h-1.5 rounded-full bg-white/40 mt-2 shrink-0" />
                           {point}
                         </li>
@@ -249,14 +264,14 @@ export function FitCheck() {
                     </ul>
                   </div>
 
-                  <div className="glass-panel p-6 rounded-3xl space-y-4 bg-white/5 border-white/10">
+                  <div className="bg-[#1C1C1E] border border-white/10 p-6 rounded-[24px] space-y-4 shadow-lg">
                     <h3 className="font-display font-medium text-lg flex items-center gap-2 text-white">
                       <Sparkles size={18} className="text-white/60" />
                       Smart Upgrades
                     </h3>
                     <ul className="space-y-3">
                       {result.upgrades.map((point, i) => (
-                        <li key={i} className="text-sm text-white/80 leading-relaxed flex items-start gap-3">
+                        <li key={i} className="text-[15px] text-white/80 leading-relaxed flex items-start gap-3">
                           <span className="w-1.5 h-1.5 rounded-full bg-white/40 mt-2 shrink-0" />
                           {point}
                         </li>
