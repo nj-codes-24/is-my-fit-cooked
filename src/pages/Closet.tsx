@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Plus, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { Plus, Sparkles, Loader2, RefreshCw, Shirt, ShoppingBag, Search, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useWardrobeStore } from "../store";
 import { Outfit } from "../types";
@@ -9,21 +9,41 @@ export function Closet() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [activeTab, setActiveTab] = useState<"items" | "outfits">("items");
+
+  const loadDemoCloset = () => {
+    const demos = [
+      { id: 'd1', category: 'T-Shirts', color: 'Black', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
+      { id: 'd2', category: 'Pants', color: 'Blue', image: 'https://images.unsplash.com/photo-1624378439575-d1ead6cb46bc?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
+      { id: 'd3', category: 'Shoes', color: 'White', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
+      { id: 'd4', category: 'Accessories', color: 'Silver', image: 'https://images.unsplash.com/photo-1523206489230-c012c64b2b48?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
+      { id: 'd5', category: 'T-Shirts', color: 'White', image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
+    ];
+    demos.forEach(d => addItem(d));
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setIsUploading(true);
       const reader = new FileReader();
       reader.onloadend = () => {
-        addItem({
-          id: Math.random().toString(36).substring(7),
-          category: "Uncategorized",
-          color: "Unknown",
-          image: reader.result as string,
-          addedAt: Date.now(),
-        });
+        // Simulate AI categorization delay
+        setTimeout(() => {
+          const categories = ['Shirts', 'T-Shirts', 'Pants', 'Shoes', 'Accessories'];
+          const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+          
+          addItem({
+            id: Math.random().toString(36).substring(7),
+            category: randomCategory,
+            color: "Unknown",
+            image: reader.result as string,
+            addedAt: Date.now(),
+          });
+          setIsUploading(false);
+        }, 1500);
       };
       reader.readAsDataURL(file);
     }
@@ -61,17 +81,14 @@ export function Closet() {
   return (
     <div className="flex flex-col min-h-full pb-8">
       {/* Header */}
-      <header className="px-6 pt-8 pb-4 sticky top-0 bg-black/80 backdrop-blur-xl z-10 border-b border-white/5">
-        <div className="flex justify-between items-end">
-          <div>
-            <h1 className="font-display text-3xl tracking-tight font-medium">Closet</h1>
-            <p className="text-white/50 text-sm mt-1">{items.length} items saved</p>
-          </div>
+      <header className="px-6 pt-8 pb-4 sticky top-0 bg-[#111111]/80 backdrop-blur-xl z-20 border-b border-white/5">
+        <div className="flex justify-center items-center relative">
+          <h1 className="font-display text-2xl tracking-tight font-bold text-white lowercase">closet</h1>
           <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:scale-95 transition-transform"
+            onClick={() => !isUploading && fileInputRef.current?.click()}
+            className="absolute right-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-colors"
           >
-            <Plus size={20} className="text-white" />
+            {isUploading ? <Loader2 size={20} className="text-white animate-spin" /> : <Plus size={20} className="text-white" />}
           </button>
           <input 
             type="file" 
@@ -81,6 +98,7 @@ export function Closet() {
             onChange={handleFileUpload}
           />
         </div>
+
 
         {/* Custom Segmented Control */}
         <div className="flex p-1 mt-6 bg-white/5 rounded-xl border border-white/10 relative">
@@ -122,39 +140,54 @@ export function Closet() {
                   </div>
                   <p className="text-white/80 font-medium">Your closet is empty</p>
                   <p className="text-white/50 text-sm mt-2 mb-6">Add some clothes to start generating outfits.</p>
-                  <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-6 py-3 rounded-full bg-white text-black font-medium text-sm"
-                  >
-                    Add First Item
-                  </button>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-6 py-3 rounded-full bg-white text-black font-medium text-sm shadow-xl"
+                    >
+                      Add First Item
+                    </button>
+                    <button 
+                      onClick={loadDemoCloset}
+                      className="px-6 py-3 rounded-full bg-[#1C1C1E] border border-white/10 text-white font-medium text-sm hover:bg-white/10 transition-colors shadow-xl"
+                    >
+                      Load Demo
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-3 gap-3">
-                    {items.map((item) => (
-                      <div key={item.id} className="relative aspect-square rounded-2xl overflow-hidden bg-zinc-900 border border-white/5 group">
-                        <img src={item.image} alt="Clothing item" className="w-full h-full object-cover" />
-                        <button 
-                          onClick={() => removeItem(item.id)}
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Plus size={12} className="text-white rotate-45" />
-                        </button>
+                <div className="pb-24">
+                  {/* Netflix Style Rows */}
+                  {['Shirts', 'T-Shirts', 'Pants', 'Shoes', 'Accessories'].map((category, idx) => {
+                    const categoryItems = items.filter(item => item.category === category);
+                    return (
+                    <div key={category} className="mb-8">
+                      <div className="px-4 flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-white/90">{category}</h2>
+                        <ChevronRight size={20} className="text-white/30" />
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div className="sticky bottom-24 left-0 right-0 px-4 pointer-events-none flex justify-center">
-                    <button
-                      onClick={generateOutfits}
-                      disabled={isGenerating || items.length < 2}
-                      className="pointer-events-auto w-full max-w-xs py-4 rounded-full bg-white text-black font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100 shadow-2xl"
-                    >
-                      <Sparkles size={20} />
-                      Generate Outfits
-                    </button>
-                  </div>
+                      <div className="flex gap-3 overflow-x-auto px-4 pb-4 snap-x hide-scrollbar">
+                        {categoryItems.map((item, i) => (
+                          <div key={`${category}-${i}`} className="shrink-0 w-[140px] aspect-[4/5] bg-[#1C1C1E] border border-white/5 rounded-[24px] overflow-hidden snap-start relative group shadow-lg">
+                            <img src={item.image} alt={category} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                            <button 
+                              onClick={() => removeItem(item.id)}
+                              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md"
+                            >
+                              <Plus size={16} className="text-white rotate-45" />
+                            </button>
+                          </div>
+                        ))}
+                        {categoryItems.length === 0 && (
+                          <div className="shrink-0 w-[140px] aspect-[4/5] bg-[#1C1C1E] border border-white/5 rounded-[24px] flex items-center justify-center shadow-lg">
+                            <span className="text-white/30 text-sm">Empty</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )})}
+                </div>
                 </>
               )}
             </motion.div>
