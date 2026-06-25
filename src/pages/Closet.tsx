@@ -12,7 +12,7 @@ export function Closet() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [showAddSheet, setShowAddSheet] = useState(false);
+  const [showPopover, setShowPopover] = useState(false);
   const [linkInputMode, setLinkInputMode] = useState(false);
   const [itemLink, setItemLink] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -86,7 +86,7 @@ export function Closet() {
   const handleLinkUpload = () => {
     if (!itemLink) return;
     setIsUploading(true);
-    setShowAddSheet(false);
+    setShowPopover(false);
     setTimeout(() => setLinkInputMode(false), 300);
     
     // Simulate AI fetching and categorization delay
@@ -145,14 +145,114 @@ export function Closet() {
     <div className="flex flex-col min-h-full pb-8">
       {/* Header */}
       <header className="px-6 pt-8 pb-4 sticky top-0 bg-[#111111]/80 backdrop-blur-xl z-20 border-b border-white/5">
-        <div className="flex justify-center items-center relative">
+        <div className="flex justify-center items-center relative z-50">
           <h1 className="font-display text-2xl tracking-tight font-bold text-white lowercase">closet</h1>
           <button 
-            onClick={() => !isUploading && setShowAddSheet(true)}
+            onClick={() => !isUploading && setShowPopover(true)}
             className="absolute right-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-colors"
           >
             {isUploading ? <Loader2 size={20} className="text-white animate-spin" /> : <Plus size={20} className="text-white" />}
           </button>
+          
+          {/* Contextual Popover Menu */}
+          <AnimatePresence>
+            {showPopover && (
+              <>
+                {/* Invisible overlay for dismissing */}
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-40 bg-transparent"
+                  onClick={() => {
+                    setShowPopover(false);
+                    setTimeout(() => setLinkInputMode(false), 300);
+                  }}
+                />
+                
+                {/* Popover Container */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -5, transition: { duration: 0.15 } }}
+                  transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                  style={{ transformOrigin: "top right" }}
+                  className="absolute top-14 right-0 z-50 w-[240px] box-border bg-[rgba(20,20,20,0.75)] backdrop-blur-[32px] saturate-[150%] border border-[rgba(255,255,255,0.08)] rounded-[32px] py-4 px-5 shadow-[0_16px_40px_rgba(0,0,0,0.6)] flex flex-col gap-4 overflow-hidden"
+                >
+                  {!linkInputMode ? (
+                    <>
+                      <button 
+                        onClick={() => {
+                          if (navigator.vibrate) navigator.vibrate(50);
+                          setShowPopover(false);
+                          setTimeout(() => setIsCameraOpen(true), 150);
+                        }}
+                        className="flex items-center justify-start text-left w-full gap-4 group"
+                      >
+                        <div className="w-12 h-12 rounded-[20px] bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors shadow-inner !ml-0">
+                          <Camera size={28} className="text-white/90" />
+                        </div>
+                        <div className="flex-1 whitespace-nowrap">
+                          <p className="text-white font-bold text-[15px]">Camera</p>
+                          <p className="text-[rgba(255,255,255,0.7)] text-[13px] leading-tight mt-0.5">Take a photo</p>
+                        </div>
+                        <ChevronRight size={18} className="text-white/20 group-hover:translate-x-1 transition-transform" />
+                      </button>
+
+                      <div className="h-[1px] w-full bg-[rgba(255,255,255,0.1)]" />
+
+                      <button 
+                        onClick={() => {
+                          if (navigator.vibrate) navigator.vibrate(50);
+                          setLinkInputMode(true);
+                        }}
+                        className="flex items-center justify-start text-left w-full gap-4 group"
+                      >
+                        <div className="w-12 h-12 rounded-[20px] bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors shadow-inner !ml-0">
+                          <Link2 size={28} className="text-white/90" />
+                        </div>
+                        <div className="flex-1 whitespace-nowrap">
+                          <p className="text-white font-bold text-[15px]">Import Link</p>
+                          <p className="text-[rgba(255,255,255,0.7)] text-[13px] leading-tight mt-0.5">Paste a store URL</p>
+                        </div>
+                        <ChevronRight size={18} className="text-white/20 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-3 mb-1">
+                        <button 
+                          onClick={() => setLinkInputMode(false)}
+                          className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center active:scale-95 transition-all"
+                        >
+                          <ChevronRight size={16} className="text-white rotate-180" />
+                        </button>
+                        <p className="text-white font-bold text-[15px]">Paste URL</p>
+                      </div>
+                      
+                      <input 
+                        type="url" 
+                        placeholder="https://..."
+                        value={itemLink}
+                        onChange={(e) => setItemLink(e.target.value)}
+                        className="w-full bg-black/20 ring-1 ring-inset ring-white/10 rounded-[18px] px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-white/30 transition-all text-sm shadow-inner"
+                        autoFocus
+                      />
+
+                      <button 
+                        disabled={!itemLink}
+                        onClick={handleLinkUpload}
+                        className="w-full py-3 mt-1 rounded-[18px] bg-white text-black font-bold active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-lg shadow-white/20"
+                      >
+                        Fetch Item
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -362,101 +462,7 @@ export function Closet() {
         )}
       </AnimatePresence>
 
-      {/* Add Item Bottom Sheet */}
-      <AnimatePresence>
-        {showAddSheet && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col justify-end bg-black/80 backdrop-blur-sm"
-            onClick={() => {
-              setShowAddSheet(false);
-              setTimeout(() => setLinkInputMode(false), 300);
-            }}
-          >
-            <motion.div 
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#1C1C1E] rounded-t-[32px] p-6 pb-12 shadow-2xl border-t border-white/10"
-            >
-              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-8" />
-              
-              {!linkInputMode ? (
-                <>
-                  <h3 className="text-white font-bold text-2xl mb-6">Add to Closet</h3>
-                  <div className="flex flex-col gap-4">
-                    <button 
-                      onClick={() => {
-                        setShowAddSheet(false);
-                        setTimeout(() => setIsCameraOpen(true), 300);
-                      }}
-                      className="w-full p-5 rounded-[24px] bg-[#242426] ring-1 ring-inset ring-white/10 flex items-center gap-4 active:scale-95 transition-all hover:bg-[#2A2A2D]"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                        <Camera size={24} className="text-white" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-white font-semibold text-lg">Camera or Gallery</p>
-                        <p className="text-white/50 text-sm">Take a photo or choose from library</p>
-                      </div>
-                      <ChevronRight size={20} className="text-white/30" />
-                    </button>
 
-                    <button 
-                      onClick={() => setLinkInputMode(true)}
-                      className="w-full p-5 rounded-[24px] bg-[#242426] ring-1 ring-inset ring-white/10 flex items-center gap-4 active:scale-95 transition-all hover:bg-[#2A2A2D]"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                        <Link2 size={24} className="text-white" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-white font-semibold text-lg">Import via Link</p>
-                        <p className="text-white/50 text-sm">Paste a product URL from any store</p>
-                      </div>
-                      <ChevronRight size={20} className="text-white/30" />
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col h-full">
-                  <div className="flex items-center mb-6">
-                    <button 
-                      onClick={() => setLinkInputMode(false)}
-                      className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center active:scale-95 transition-all"
-                    >
-                      <ChevronRight size={20} className="text-white rotate-180" />
-                    </button>
-                    <h3 className="text-white font-bold text-2xl ml-4">Import Link</h3>
-                  </div>
-                  
-                  <div className="flex-1 mb-8">
-                    <input 
-                      type="url" 
-                      placeholder="https://example.com/product..."
-                      value={itemLink}
-                      onChange={(e) => setItemLink(e.target.value)}
-                      className="w-full bg-[#242426] ring-1 ring-inset ring-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-white/30 transition-all text-lg"
-                      autoFocus
-                    />
-                  </div>
-
-                  <button 
-                    disabled={!itemLink}
-                    onClick={handleLinkUpload}
-                    className="w-full py-4 rounded-2xl bg-white text-black font-bold active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-                  >
-                    Fetch Item
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Full-Screen Camera View */}
       <AnimatePresence>
