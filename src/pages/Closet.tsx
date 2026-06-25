@@ -22,16 +22,7 @@ export function Closet() {
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [activeTab, setActiveTab] = useState<"items" | "outfits">("items");
 
-  const loadDemoCloset = () => {
-    const demos = [
-      { id: 'd1', category: 'T-Shirts', color: 'Black', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
-      { id: 'd2', category: 'Pants', color: 'Blue', image: 'https://images.unsplash.com/photo-1624378439575-d1ead6cb46bc?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
-      { id: 'd3', category: 'Shoes', color: 'White', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
-      { id: 'd4', category: 'Accessories', color: 'Silver', image: 'https://images.unsplash.com/photo-1523206489230-c012c64b2b48?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
-      { id: 'd5', category: 'T-Shirts', color: 'White', image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=500', addedAt: Date.now() },
-    ];
-    demos.forEach(d => addItem(d));
-  };
+
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -277,12 +268,6 @@ export function Closet() {
                       className="px-6 py-3 rounded-full bg-white text-black font-medium text-sm shadow-xl"
                     >
                       Add First Item
-                    </button>
-                    <button 
-                      onClick={loadDemoCloset}
-                      className="px-6 py-3 rounded-full bg-[#1C1C1E] border border-white/10 text-white font-medium text-sm hover:bg-white/10 transition-colors shadow-xl"
-                    >
-                      Load Demo
                     </button>
                   </div>
                 </div>
