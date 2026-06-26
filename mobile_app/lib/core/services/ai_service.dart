@@ -86,7 +86,8 @@ class AIService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('AI API Error: ${response.statusCode} - ${response.body}');
+      debugPrint('AI API Error: HTTP ${response.statusCode}');
+      throw Exception('Failed to connect to the styling service. Please try again later.');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -153,7 +154,8 @@ class AIService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('AI API Error: ${response.statusCode} - ${response.body}');
+      debugPrint('AI API Error: HTTP ${response.statusCode}');
+      throw Exception('Failed to connect to the styling service. Please try again later.');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -225,7 +227,8 @@ class AIService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('AI API Error: ${response.statusCode} - ${response.body}');
+      debugPrint('AI API Error: HTTP ${response.statusCode}');
+      throw Exception('Failed to connect to the styling service. Please try again later.');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;

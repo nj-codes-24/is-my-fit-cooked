@@ -316,7 +316,7 @@ class _ClosetScreenState extends ConsumerState<ClosetScreen> {
 
 // ── Private sub-widgets ──────────────────────────────────────────────
 
-class _ClosetHeader extends StatelessWidget {
+class _ClosetHeader extends ConsumerWidget {
   const _ClosetHeader({
     required this.isUploading,
     required this.activeTab,
@@ -330,7 +330,7 @@ class _ClosetHeader extends StatelessWidget {
   final ValueChanged<String> onTabChanged;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       decoration: const BoxDecoration(
@@ -354,6 +354,47 @@ class _ClosetHeader extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              Semantics(
+                button: true,
+                label: 'Delete all data',
+                child: Tooltip(
+                  message: 'Delete all data',
+                  child: GestureDetector(
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Delete All Data?'),
+                          content: const Text('This action is permanent and complies with GDPR right-to-erasure.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                          ],
+                        ),
+                      );
+                      if (confirm ?? false) {
+                        await ref.read(wardrobeProvider.notifier).deleteAllData();
+                      }
+                    },
+                    child: Container(
+                      width: AppTheme.minTouchTarget,
+                      height: AppTheme.minTouchTarget,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          LucideIcons.trash_2,
+                          size: 20,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               Semantics(
                 button: true,
                 label: isUploading ? 'Uploading item' : 'Add new item',
