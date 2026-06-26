@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:is_my_fit_cooked/core/constants/app_constants.dart';
 import 'package:is_my_fit_cooked/core/providers/camera_provider.dart';
 import 'package:is_my_fit_cooked/core/services/ai_service.dart';
+import 'package:is_my_fit_cooked/core/services/storage_service.dart';
 
 /// State for the FitCheck feature.
 class FitCheckState {
@@ -211,8 +212,14 @@ class FitCheckNotifier extends Notifier<FitCheckState> {
     state = state.copyWith(isAnalyzing: true, clearResult: true);
 
     try {
+      final storageService = ref.read(storageServiceProvider);
       final aiService = ref.read(aiServiceProvider);
-      final result = await aiService.analyzeOutfit(state.imageBytes!);
+
+      // Upload image to Cloudflare R2
+      final imageUrl = await storageService.uploadImage(state.imageBytes!);
+
+      // Analyze via OpenRouter Vision Model
+      final result = await aiService.analyzeOutfit(imageUrl);
       state = state.copyWith(result: result);
     } catch (e) {
       debugPrint('Analyze outfit failed');

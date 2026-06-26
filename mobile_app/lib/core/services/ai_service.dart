@@ -26,11 +26,7 @@ class AIService {
   static const String _apiKey = String.fromEnvironment('AI_API_KEY');
   static const String _baseUrl = String.fromEnvironment(
     'AI_BASE_URL',
-    defaultValue: 'https://api.groq.com/openai/v1',
-  );
-  static const String _modelName = String.fromEnvironment(
-    'AI_MODEL_NAME',
-    defaultValue: 'llama-3.2-90b-vision-preview',
+    defaultValue: 'https://openrouter.ai/api/v1',
   );
 
   /// Validates that the API key has been provided.
@@ -38,19 +34,15 @@ class AIService {
 
   /// Analyzes an outfit image and returns structured feedback.
   ///
-  /// Uses OpenAI vision payload format `data:image/jpeg;base64,...`.
+  /// Uses OpenAI vision payload format with a public image URL.
   /// Returns a map with `feedback` (`List<String>`) and `upgrades` (`List<String>`).
-  Future<Map<String, dynamic>> analyzeOutfit(Uint8List imageBytes) async {
+  Future<Map<String, dynamic>> analyzeOutfit(String imageUrl) async {
     if (!isConfigured) {
       throw Exception(
         'AI_API_KEY not set. '
         'Build with: flutter run --dart-define=AI_API_KEY=your_key',
       );
     }
-
-    // Offload base64 encoding to background isolate for large images.
-    final base64Image = await compute(base64Encode, imageBytes);
-    final dataUri = 'data:image/jpeg;base64,$base64Image';
 
     const systemPrompt =
         'You are a high-end personal stylist. Analyze the provided outfit image. '
@@ -59,7 +51,11 @@ class AIService {
         'and "upgrades" (an array of 2 smart, actionable string upgrades).';
 
     final payload = {
-      'model': _modelName,
+      'models': [
+        'google/gemma-4-31b-it:free',
+        'nvidia/nemotron-nano-12b-v2-vl:free',
+        'openrouter/free',
+      ],
       'response_format': {'type': 'json_object'},
       'messages': [
         {
@@ -72,7 +68,74 @@ class AIService {
             {
               'type': 'image_url',
               'image_url': {
-                'url': dataUri,
+                'url': imageUrl,
+              },
+            }
+          ],
+        },
+      ],
+    };
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl/chat/completions'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_apiKey',
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('AI API Error: ${response.statusCode} - ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final choices = data['choices'] as List<dynamic>?;
+    if (choices == null || choices.isEmpty) {
+      throw Exception('Empty response from AI');
+    }
+
+    final firstChoice = choices.first as Map<String, dynamic>;
+    final message = firstChoice['message'] as Map<String, dynamic>;
+    final content = message['content'] as String?;
+    
+    if (content == null) {
+      throw Exception('Empty content from AI');
+    }
+
+    return jsonDecode(content) as Map<String, dynamic>;
+  }
+
+  /// Extracts tags (color, style, category) from an image URL.
+  Future<Map<String, dynamic>> extractTags(String imageUrl) async {
+    if (!isConfigured) {
+      throw Exception('AI_API_KEY not set.');
+    }
+
+    const systemPrompt =
+        'You are a high-end personal stylist. Analyze the provided clothing item image. '
+        'You MUST respond with a raw JSON object containing exactly two string keys: '
+        '"color" (e.g. Navy Blue) and "category" (e.g. Shirt, Pants).';
+
+    final payload = {
+      'models': [
+        'google/gemma-4-31b-it:free',
+        'nvidia/nemotron-nano-12b-v2-vl:free',
+        'openrouter/free',
+      ],
+      'response_format': {'type': 'json_object'},
+      'messages': [
+        {
+          'role': 'system',
+          'content': systemPrompt,
+        },
+        {
+          'role': 'user',
+          'content': [
+            {
+              'type': 'image_url',
+              'image_url': {
+                'url': imageUrl,
               },
             }
           ],
@@ -133,7 +196,12 @@ class AIService {
         '"description" (string), and "itemIds" (an array of string IDs representing the items used).';
 
     final payload = {
-      'model': _modelName,
+      'models': [
+        'openai/gpt-oss-120b:free',
+        'meta-llama/llama-3.3-70b-instruct:free',
+        'qwen/qwen3-coder:free',
+        'openrouter/free',
+      ],
       'response_format': {'type': 'json_object'},
       'messages': [
         {

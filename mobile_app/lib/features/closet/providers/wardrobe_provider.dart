@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:is_my_fit_cooked/core/constants/app_constants.dart';
+import 'package:is_my_fit_cooked/core/services/ai_service.dart';
 import 'package:is_my_fit_cooked/core/services/secure_storage_service.dart';
+import 'package:is_my_fit_cooked/core/services/storage_service.dart';
 import 'package:is_my_fit_cooked/features/closet/domain/wardrobe_item.dart';
 
 /// Provider for wardrobe items backed by encrypted storage.
@@ -61,10 +63,40 @@ class WardrobeNotifier extends Notifier<List<WardrobeItem>> {
     }
   }
 
-  /// Adds an item to the top of the wardrobe.
+  /// Adds an item optimistically to the wardrobe.
+  /// Spawns a background process to upload the image to R2 and extract AI tags.
   void addItem(WardrobeItem item) {
     state = [item, ...state];
     _saveItems(state);
+
+    if (item.imageBytes != null && item.color.isEmpty) {
+      _processImageAsync(item);
+    }
+  }
+
+  Future<void> _processImageAsync(WardrobeItem item) async {
+    try {
+      final storage = ref.read(storageServiceProvider);
+      final ai = ref.read(aiServiceProvider);
+
+      // 1. Compress & Upload to Cloudflare R2
+      final imageUrl = await storage.uploadImage(item.imageBytes!);
+
+      // 2. Extract Tags via OpenRouter Vision AI
+      final tags = await ai.extractTags(imageUrl);
+
+      // 3. Merge extracted tags back into the optimistic item
+      final updated = item.copyWith(
+        color: tags['color'] as String? ?? item.color,
+        category: tags['category'] as String? ?? item.category,
+        image: imageUrl, // Cache the public R2 URL
+      );
+      
+      // Update state without blocking the user
+      updateItem(updated);
+    } on Exception catch (e) {
+      debugPrint('Background R2/AI Tagging failed: $e');
+    }
   }
 
   /// Removes an item by ID.
