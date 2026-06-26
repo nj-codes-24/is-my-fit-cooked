@@ -1,35 +1,21 @@
+/// Application entry point.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'layout.dart';
-import 'theme.dart';
-import 'package:camera/camera.dart';
 
-List<CameraDescription> cameras = [];
+import 'package:is_my_fit_cooked/app/app.dart';
 
+/// Entry point — no global mutable state.
+///
+/// Camera list is now a `FutureProvider` (see `cameraListProvider`).
+/// API key is injected at build time via `--dart-define=GEMINI_API_KEY=...`.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    cameras = await availableCameras();
-  } catch (e) {
-    debugPrint("Failed to load cameras: $e");
-  }
+
   runApp(
     const ProviderScope(
       child: IsMyFitCookedApp(),
     ),
   );
-}
-
-class IsMyFitCookedApp extends StatelessWidget {
-  const IsMyFitCookedApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Is My Fit Cooked',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      home: const AppLayout(),
-    );
-  }
 }

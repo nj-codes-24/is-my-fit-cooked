@@ -1,5 +1,5 @@
 name: is_my_fit_cooked
-description: "A new Flutter project replacing the React app."
+description: "AI-powered outfit analysis and wardrobe management app."
 
 publish_to: 'none'
 
@@ -9,40 +9,25 @@ environment:
   sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
+  cached_network_image: ^3.3.1
+  camera: ^0.10.5+9
   flutter:
     sdk: flutter
-  
-  # State management
-  flutter_riverpod: ^2.5.1
-  
-  # Camera and Image
-  camera: ^0.10.5+9
-  image_picker: ^1.0.7
-  
-  # Persistence
-  shared_preferences: ^2.2.2
-  
-  # Icons
-  # Animations
   flutter_animate: ^4.5.0
-  
-  # AI API
-  google_generative_ai: ^0.4.3
-  
-  # HTTP
-  http: ^1.2.1
-
-  # Utils
-  uuid: ^4.3.3
-  cached_network_image: ^3.3.1
-  url_launcher: ^6.2.5
-  google_fonts: ^8.1.0
   flutter_lucide: ^1.11.0
+  flutter_riverpod: ^2.5.1
+  flutter_secure_storage: ^9.2.4
+  google_fonts: ^6.2.1
+  google_generative_ai: ^0.4.3
+  http: ^1.2.1
+  image_picker: ^1.0.7
+  url_launcher: ^6.2.5
+  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  very_good_analysis: ^7.0.0
 
 flutter:
   uses-material-design: true
