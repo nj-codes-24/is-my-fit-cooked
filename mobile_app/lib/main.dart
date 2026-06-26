@@ -9,7 +9,7 @@ import 'package:is_my_fit_cooked/app/app.dart';
 /// Entry point — no global mutable state.
 ///
 /// Camera list is now a `FutureProvider` (see `cameraListProvider`).
-/// API key is injected at build time via `--dart-define=GEMINI_API_KEY=...`.
+/// API key is injected at build time via `--dart-define=AI_API_KEY=...`.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

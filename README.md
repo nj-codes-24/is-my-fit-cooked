@@ -6,7 +6,7 @@
 
 ## 🌟 Key Features
 
-*   **AI Fit Check:** Snap a photo or upload an image and get instant, brutally honest (and helpful) feedback on your outfit from Gemini 2.5 Flash.
+*   **AI Fit Check:** Snap a photo or upload an image and get instant, brutally honest (and helpful) feedback on your outfit from any open-source vision model (e.g., Llama 3.2 Vision, Qwen VL).
 *   **Digital Closet:** Store and organize your clothing items locally. Add items via camera, gallery, or direct store link imports.
 *   **Smart Outfit Generation:** Automatically curate fresh looks and outfit combinations based on the contents of your digital wardrobe.
 *   **Curated Explore Feed:** Discover trending fashion deals and brand spotlights in a beautifully designed, glassmorphic UI.
@@ -49,7 +49,7 @@ The codebase abandons the legacy "god-class" monoliths and is structured around 
 ### Prerequisites
 *   Flutter SDK (>=3.3.0)
 *   Dart SDK (>=3.3.0 <4.0.0)
-*   A Gemini API Key from Google AI Studio.
+*   An API key from an OpenAI-compatible provider (e.g., Groq, OpenRouter, Together AI, or OpenAI).
 
 ### Build Instructions
 
@@ -65,9 +65,12 @@ The codebase abandons the legacy "god-class" monoliths and is structured around 
     ```
 
 3.  **Run the App (Injecting Build Variables)**
-    You **must** provide your Gemini API key via the `--dart-define` flag at build time. The app will fail to authenticate otherwise.
+    You **must** provide your API key via the `--dart-define` flag at build time. The app defaults to Groq and the `llama-3.2-90b-vision-preview` model, but you can configure it for any OpenAI-compatible provider.
     ```bash
-    flutter run --dart-define=GEMINI_API_KEY="your_api_key_here"
+    flutter run \
+      --dart-define=AI_API_KEY="your_api_key_here" \
+      --dart-define=AI_BASE_URL="https://api.groq.com/openai/v1" \
+      --dart-define=AI_MODEL_NAME="llama-3.2-90b-vision-preview"
     ```
 
 ### Running Tests
