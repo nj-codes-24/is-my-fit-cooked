@@ -31,20 +31,23 @@ class AppLayout extends ConsumerWidget {
     final currentIndex = ref.watch(tabProvider);
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
 
+    /// iOS industry-standard tab bar height.
+    const double navActiveHeight = 44;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: Stack(
         children: [
           // IndexedStack preserves state across tabs.
           Positioned.fill(
-            bottom: 64 + bottomPadding,
+            bottom: navActiveHeight + bottomPadding,
             child: IndexedStack(
               index: currentIndex,
               children: _screens,
             ),
           ),
 
-          // Glassmorphic bottom navigation
+          // Glassmorphic bottom navigation — strictly 60px usable area
           Positioned(
             bottom: 0,
             left: 0,
@@ -53,41 +56,41 @@ class AppLayout extends ConsumerWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
-                  height: 64 + bottomPadding,
+                  height: navActiveHeight + bottomPadding,
                   decoration: const BoxDecoration(
                     color: Color(0x991C1C1E),
                     border: Border(
                       top: BorderSide(color: AppTheme.glassBorder),
                     ),
                   ),
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: bottomPadding),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _NavItem(
-                          ref: ref,
-                          currentIndex: currentIndex,
-                          index: 0,
-                          icon: LucideIcons.camera,
-                          label: 'FIT CHECK',
-                        ),
-                        _NavItem(
-                          ref: ref,
-                          currentIndex: currentIndex,
-                          index: 1,
-                          icon: LucideIcons.layers,
-                          label: 'CLOSET',
-                        ),
-                        _NavItem(
-                          ref: ref,
-                          currentIndex: currentIndex,
-                          index: 2,
-                          icon: LucideIcons.compass,
-                          label: 'EXPLORE',
-                        ),
-                      ],
-                    ),
+                  // Safe-area inset as padding, not height inflation
+                  padding: EdgeInsets.only(bottom: bottomPadding),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _NavItem(
+                        ref: ref,
+                        currentIndex: currentIndex,
+                        index: 0,
+                        icon: LucideIcons.camera,
+                        label: 'FIT CHECK',
+                      ),
+                      _NavItem(
+                        ref: ref,
+                        currentIndex: currentIndex,
+                        index: 1,
+                        icon: LucideIcons.layers,
+                        label: 'CLOSET',
+                      ),
+                      _NavItem(
+                        ref: ref,
+                        currentIndex: currentIndex,
+                        index: 2,
+                        icon: LucideIcons.compass,
+                        label: 'EXPLORE',
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -127,19 +130,20 @@ class _NavItem extends StatelessWidget {
         child: GestureDetector(
           onTap: () => ref.read(tabProvider.notifier).state = index,
           behavior: HitTestBehavior.opaque,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 80,
-            height: 64,
+          // Zero extra vertical margin — icon wrapper is display:flex + center
+          child: SizedBox(
+            width: 64,
+            height: 44,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   icon,
                   color: isActive
                       ? AppTheme.textPrimary
                       : AppTheme.textSecondary,
-                  size: 24,
+                  size: 22,
                   shadows: isActive
                       ? const [
                           Shadow(
@@ -149,15 +153,15 @@ class _NavItem extends StatelessWidget {
                         ]
                       : null,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   label,
                   style: TextStyle(
                     color: isActive
                         ? AppTheme.textPrimary
                         : AppTheme.textSecondary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),
                 ),

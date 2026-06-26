@@ -17,6 +17,7 @@ import 'package:is_my_fit_cooked/core/services/storage_service.dart';
 class FitCheckState {
   const FitCheckState({
     this.isCameraInitialized = false,
+    this.isCameraActive = false,
     this.cameraError = false,
     this.cameraErrorMessage = '',
     this.isSelfieMode = true,
@@ -28,6 +29,7 @@ class FitCheckState {
   });
 
   final bool isCameraInitialized;
+  final bool isCameraActive;
   final bool cameraError;
   final String cameraErrorMessage;
   final bool isSelfieMode;
@@ -42,6 +44,7 @@ class FitCheckState {
 
   FitCheckState copyWith({
     bool? isCameraInitialized,
+    bool? isCameraActive,
     bool? cameraError,
     String? cameraErrorMessage,
     bool? isSelfieMode,
@@ -56,6 +59,7 @@ class FitCheckState {
   }) {
     return FitCheckState(
       isCameraInitialized: isCameraInitialized ?? this.isCameraInitialized,
+      isCameraActive: isCameraActive ?? this.isCameraActive,
       cameraError: cameraError ?? this.cameraError,
       cameraErrorMessage: cameraErrorMessage ?? this.cameraErrorMessage,
       isSelfieMode: isSelfieMode ?? this.isSelfieMode,
@@ -87,8 +91,7 @@ class FitCheckNotifier extends Notifier<FitCheckState> {
   @override
   FitCheckState build() {
     ref.onDispose(_dispose);
-    // Initialize camera after build.
-    Future.microtask(() async => initCamera());
+    // Camera starts dormant — activated by user pressing shutter.
     return const FitCheckState();
   }
 
@@ -99,14 +102,20 @@ class FitCheckNotifier extends Notifier<FitCheckState> {
 
   /// Initializes or reinitializes the camera.
   Future<void> initCamera() async {
-    final camerasAsync = ref.read(cameraListProvider);
-    final cameras = camerasAsync.valueOrNull ?? [];
+    // Await camera discovery — ref.read only gets a snapshot which may be null
+    List<CameraDescription> cameras;
+    try {
+      cameras = await availableCameras();
+    } on Exception catch (e) {
+      debugPrint('Camera discovery failed: $e');
+      cameras = [];
+    }
 
     if (cameras.isEmpty) {
       state = state.copyWith(
         cameraError: true,
         cameraErrorMessage:
-            'No cameras available. Camera access requires HTTPS or localhost.',
+            'No cameras available. Please check camera permissions.',
       );
       return;
     }
@@ -131,14 +140,15 @@ class FitCheckNotifier extends Notifier<FitCheckState> {
       await _controller!.initialize();
       state = state.copyWith(
         isCameraInitialized: true,
+        isCameraActive: true,
         cameraError: false,
       );
-    } on Exception catch (_) {
-      debugPrint('Camera init error');
+    } on Exception catch (e) {
+      debugPrint('Camera init error: $e');
       state = state.copyWith(
         cameraError: true,
         cameraErrorMessage:
-            'Camera access requires HTTPS or localhost.',
+            'Failed to initialize camera. Please check permissions.',
       );
     }
   }
@@ -162,8 +172,15 @@ class FitCheckNotifier extends Notifier<FitCheckState> {
   }
 
   /// Captures a photo (with optional countdown timer).
+  /// If camera is dormant, activates it first.
   void handleCapture() {
     if (state.countdown != null) return;
+
+    if (!state.isCameraActive) {
+      // First press: activate the camera
+      Future.microtask(() async => initCamera());
+      return;
+    }
 
     if (state.timerSeconds > 0) {
       state = state.copyWith(countdown: state.timerSeconds);
@@ -205,28 +222,32 @@ class FitCheckNotifier extends Notifier<FitCheckState> {
     }
   }
 
-  /// Sends the captured image to Gemini for outfit analysis.
+  /// Analyzes the outfit. Currently uses dummy data for UI development.
+  /// TODO: Re-enable real AI analysis once API keys are configured.
   Future<void> analyzeOutfit() async {
     if (state.imageBytes == null) return;
 
     state = state.copyWith(isAnalyzing: true, clearResult: true);
 
-    try {
-      final storageService = ref.read(storageServiceProvider);
-      final aiService = ref.read(aiServiceProvider);
+    // Simulate AI processing delay
+    await Future<void>.delayed(const Duration(seconds: 2));
 
-      // Upload image to Cloudflare R2
-      final imageUrl = await storageService.uploadImage(state.imageBytes!);
+    // Dummy data for UI development
+    const dummyResult = <String, dynamic>{
+      'feedback': [
+        'The overall color palette is cohesive — earthy tones with a clean neutral base work really well together.',
+        'The fit on the top layer is slightly oversized which gives a relaxed streetwear vibe. Intentional and on-trend.',
+        'Footwear choice grounds the outfit nicely. The silhouette flows from structured up top to chunky at the bottom.',
+        'Accessories are minimal which keeps the look clean. Consider adding a single statement piece.',
+      ],
+      'upgrades': [
+        'Swap the belt for a woven leather one to add texture contrast without clashing.',
+        'A slim silver chain necklace would elevate the neckline without competing with the jacket.',
+        'Try cuffing the pants once more for a cleaner break above the shoes.',
+      ],
+    };
 
-      // Analyze via OpenRouter Vision Model
-      final result = await aiService.analyzeOutfit(imageUrl);
-      state = state.copyWith(result: result);
-    } catch (e) {
-      debugPrint('Analyze outfit failed');
-      rethrow;
-    } finally {
-      state = state.copyWith(isAnalyzing: false);
-    }
+    state = state.copyWith(result: dummyResult, isAnalyzing: false);
   }
 
   /// Resets to camera view, clearing captured image and results.
