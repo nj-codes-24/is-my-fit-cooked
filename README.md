@@ -1,91 +1,89 @@
-# Is My Fit Cooked? 🔥
+# Is My Fit Cooked?
 
-**Is My Fit Cooked** is an elite, AI-powered outfit analysis and wardrobe management application built with Flutter. Designed for fashion enthusiasts, it leverages state-of-the-art Generative AI to analyze your fits, provide style feedback, and generate curated looks straight from your digital closet.
+**Is My Fit Cooked** is an AI-driven outfit analysis and wardrobe management platform. Developed using Flutter, the application employs state-of-the-art Generative AI models to perform real-time outfit analysis, offer objective stylistic feedback, and automatically curate looks utilizing digital wardrobe metadata.
 
----
+## Table of Contents
+- [Architecture & System Overview](#architecture--system-overview)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Testing](#testing)
+- [Contributing & Code of Conduct](#contributing--code-of-conduct)
+- [License](#license)
 
-## 🌟 Key Features
+## Architecture & System Overview
 
-*   **AI Fit Check:** Snap a photo or upload an image and get instant, brutally honest (and helpful) feedback on your outfit from any open-source vision model (e.g., Llama 3.2 Vision, Qwen VL).
-*   **Digital Closet:** Store and organize your clothing items locally. Add items via camera, gallery, or direct store link imports.
-*   **Smart Outfit Generation:** Automatically curate fresh looks and outfit combinations based on the contents of your digital wardrobe.
-*   **Curated Explore Feed:** Discover trending fashion deals and brand spotlights in a beautifully designed, glassmorphic UI.
+The application is structured around a scalable, domain-driven design paradigm, ensuring high maintainability and performance.
 
----
+### Core Modules
+* **`lib/core/`**: Contains centralized design tokens, global configuration constants, cryptographic services, and foundational application utilities.
+* **`lib/features/`**: Encapsulates specific functional domains (`closet`, `explore`, `fit_check`). Each module is isolated, implementing its own `presentation/`, `domain/`, and `providers/` directories.
 
-## 🏗️ Technical Architecture & Engineering
+### System Design and Data Flow
+* **State Management**: The application state is strictly managed via Riverpod 2.0+ utilizing the `Notifier` and `NotifierProvider` architecture. The presentation layer exclusively consists of declarative `ConsumerWidget` instances, entirely decoupled from business logic and ensuring zero mutable state within the UI.
+* **Storage and Asset Pipeline**: To mitigate token constraints and API latency, image payloads are locally compressed utilizing `flutter_image_compress` and asynchronously offloaded to Cloudflare R2 object storage. Analytical models receive lightweight public URLs rather than raw Base64 data.
+* **Dynamic AI Routing**: Integration with OpenRouter facilitates automated fallback routing between large language models (e.g., `gpt-oss-120b:free` and `qwen3-coder:free`), ensuring fault tolerance during periods of rate limiting.
+* **Thread Offloading**: Intensive tasks such as JSON serialization and asset compression are delegated to background isolates utilizing `compute()`, ensuring uninterrupted 60fps UI performance.
+* **Security Subsystem**: Direct device persistence is handled via `flutter_secure_storage` to ensure all data is encrypted at rest. API credentials are injected strictly at build time and excluded from source control.
 
-This project is engineered to strict, senior-level industry standards.
+## Prerequisites
 
-### 1. Clean, Feature-Driven Architecture
-The codebase abandons the legacy "god-class" monoliths and is structured around a scalable, feature-first paradigm.
-*   **`lib/core/`**: Centralized themes, design tokens, configuration constants, and global services.
-*   **`lib/features/`**: Domain-driven modules (`closet`, `explore`, `fit_check`), each encapsulating their own `presentation/`, `domain/`, and `providers/`.
+Ensure the following software dependencies are installed and properly configured within the execution environment:
+* **Flutter SDK**: version `>=3.3.0`
+* **Dart SDK**: version `>=3.3.0 <4.0.0`
+* **Object Storage**: A configured Cloudflare R2 bucket (or S3-compatible alternative) for image offloading.
+* **AI Provider Credentials**: An API key from an OpenAI-compatible interface provider (e.g., OpenRouter, Together AI, Groq).
 
-### 2. Modern State Management
-*   Driven entirely by **Riverpod 2.0+** using the modern `Notifier` and `NotifierProvider` patterns.
-*   Business logic is strictly decoupled from the UI. Screens are pure, declarative `ConsumerWidget`s with zero mutable state.
-*   Immutable domain models configured with full `@immutable` safety and strict equality overrides.
+## Installation
 
-### 3. Advanced Performance & Threading
-*   **Isolate Offloading:** Heavy synchronous tasks—such as JSON serialization and Base64 image encoding—are offloaded to background threads using `compute()` to prevent main-thread jank.
-*   **Disk Caching:** Optimized image rendering and network usage via `CachedNetworkImage`.
-*   **Compile-Time Optimizations:** Comprehensive enforcement of `const` widget constructors across the entire widget tree to minimize garbage collection overhead.
-*   **Zero Static Analysis Issues:** Codebase strictly conforms to `very_good_analysis` with 0 warnings or infos.
+Execute the following commands to provision the local environment and acquire the necessary dependencies.
 
-### 4. Security & GDPR Compliance
-*   **Encrypted Storage:** Total deprecation of insecure `shared_preferences`. All persistent data is encrypted at rest using `flutter_secure_storage`.
-*   **Secrets Injection:** API keys are never hardcoded. Keys must be injected securely at build time.
-*   **Data Erasure:** Includes GDPR-compliant APIs to instantly purge local encrypted databases.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/is-my-fit-cooked.git
+   cd is-my-fit-cooked/mobile_app
+   ```
 
-### 5. Accessibility (WCAG 2.1)
-*   **Semantic Trees:** Deep integration of Flutter's `Semantics` widget for robust screen-reader support.
-*   **Touch Targets:** All interactive zones conform to the WCAG 48×48 logical pixel minimum.
+2. **Acquire dependencies:**
+   ```bash
+   flutter pub get
+   ```
 
----
+## Usage
 
-## 🚀 Setup & Installation
+The application requires runtime configuration injection. Do not hardcode sensitive variables. Provide the requisite environment parameters using the `--dart-define` flag at compile/run time.
 
-### Prerequisites
-*   Flutter SDK (>=3.3.0)
-*   Dart SDK (>=3.3.0 <4.0.0)
-*   An API key from an OpenAI-compatible provider (e.g., Groq, OpenRouter, Together AI, or OpenAI).
+```bash
+flutter run \
+  --dart-define=AI_API_KEY="your_openrouter_key" \
+  --dart-define=R2_ACCOUNT_ID="your_cloudflare_account_id" \
+  --dart-define=R2_ACCESS_KEY="your_r2_access_key" \
+  --dart-define=R2_SECRET_KEY="your_r2_secret_key" \
+  --dart-define=R2_BUCKET_NAME="your_bucket_name" \
+  --dart-define=R2_PUBLIC_URL="https://cdn.yourdomain.com"
+```
 
-### Build Instructions
+## Testing
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/yourusername/is-my-fit-cooked.git
-    cd is-my-fit-cooked/mobile_app
-    ```
+The project implements a comprehensive unit testing suite targeting domain model serialization, logic branches, and value-equality contracts. Execute the test suite utilizing the standard Flutter testing framework.
 
-2.  **Install dependencies**
-    ```bash
-    flutter pub get
-    ```
-
-3.  **Run the App (Injecting Build Variables)**
-    You **must** provide your API key via the `--dart-define` flag at build time. The app defaults to Groq and the `llama-3.2-90b-vision-preview` model, but you can configure it for any OpenAI-compatible provider.
-    ```bash
-    flutter run \
-      --dart-define=AI_API_KEY="your_api_key_here" \
-      --dart-define=AI_BASE_URL="https://api.groq.com/openai/v1" \
-      --dart-define=AI_MODEL_NAME="llama-3.2-90b-vision-preview"
-    ```
-
-### Running Tests
-Unit tests comprehensively cover domain model serialization, edge cases, and value-equality.
 ```bash
 flutter test
 ```
 
----
+## Contributing & Code of Conduct
 
-## 🎨 Design Language
-The UI adopts a highly polished, premium minimalist aesthetic:
-*   **Glassmorphism:** Heavy use of dynamic blur filters (`BackdropFilter`) and subtle gradient borders (`Color(0x1AFFFFFF)`).
-*   **Typography:** Modern web fonts via `google_fonts` combined with clean, monospaced accents.
-*   **Color Palette:** A deeply atmospheric dark mode (`#111111` root background) with highly accessible, high-contrast text tokens.
+Contributions to the codebase must adhere strictly to established architectural patterns and static analysis configurations (`very_good_analysis`).
 
----
-*Developed with Flutter & Riverpod.*
+### Pull Request Process
+1. Fork the repository and create a feature branch (`git checkout -b feature/your-feature`).
+2. Ensure the code compiles cleanly and introduces zero static analysis warnings.
+3. Validate changes against existing tests and implement new tests for any added logic.
+4. Submit a Pull Request detailing the scope, motivation, and technical implementation of the proposed changes.
+
+### Code of Conduct
+All contributors are expected to maintain professional discourse and participate constructively. Harassment or unprofessional conduct will not be tolerated. Review our full Code of Conduct before engaging in project discussions or contributions.
+
+## License
+
+This project is proprietary and confidential. All rights reserved.
