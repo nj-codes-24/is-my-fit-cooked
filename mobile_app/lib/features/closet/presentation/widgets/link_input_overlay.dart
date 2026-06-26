@@ -1,6 +1,8 @@
 /// Link input overlay for importing items via URL.
 library;
 
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_lucide/flutter_lucide.dart';
@@ -29,7 +31,10 @@ class LinkInputOverlay extends StatelessWidget {
             onTap: onClose,
             child: Semantics(
               label: 'Dismiss dialog',
-              child: Container(color: Colors.black45),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(color: Colors.black87),
+              ),
             ),
           ),
           Center(

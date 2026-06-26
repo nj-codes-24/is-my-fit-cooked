@@ -59,20 +59,9 @@ class _ClosetScreenState extends ConsumerState<ClosetScreen> {
       if (file != null) {
         final bytes = await file.readAsBytes();
 
-        // Simulate AI categorization.
-        await Future<void>.delayed(const Duration(milliseconds: 1500));
-
-        final categories = [
-          'Shirts',
-          'T-Shirts',
-          'Pants',
-          'Shoes',
-          'Accessories',
-        ]..shuffle();
-
         final newItem = WardrobeItem(
           id: const Uuid().v4(),
-          category: categories.first,
+          category: 'Uncategorized',
           color: 'Unknown',
           imageBytes: bytes,
           addedAt: DateTime.now().millisecondsSinceEpoch,
@@ -104,16 +93,6 @@ class _ClosetScreenState extends ConsumerState<ClosetScreen> {
     });
 
     try {
-      await Future<void>.delayed(const Duration(seconds: 2));
-
-      final categories = [
-        'Shirts',
-        'T-Shirts',
-        'Pants',
-        'Shoes',
-        'Accessories',
-      ]..shuffle();
-
       final mockImages = [
         'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=500',
         'https://images.unsplash.com/photo-1624378439575-d1ead6cb46bc?auto=format&fit=crop&q=80&w=500',
@@ -122,7 +101,7 @@ class _ClosetScreenState extends ConsumerState<ClosetScreen> {
 
       final newItem = WardrobeItem(
         id: const Uuid().v4(),
-        category: categories.first,
+        category: 'Uncategorized',
         color: 'Unknown',
         image: mockImages.first,
         addedAt: DateTime.now().millisecondsSinceEpoch,
@@ -260,8 +239,9 @@ class _ClosetScreenState extends ConsumerState<ClosetScreen> {
                         items: items,
                         onItemTap: (item) =>
                             setState(() => _selectedItem = item),
-                        onAddFromGallery: () =>
-                            _handleImageSource(ImageSource.gallery),
+                        onAddTap: () {
+                          if (!_isUploading) setState(() => _showPopover = true);
+                        },
                         imageBuilder: _buildItemImage,
                       )
                     : _OutfitsView(
@@ -548,13 +528,13 @@ class _ItemsView extends StatelessWidget {
   const _ItemsView({
     required this.items,
     required this.onItemTap,
-    required this.onAddFromGallery,
+    required this.onAddTap,
     required this.imageBuilder,
   });
 
   final List<WardrobeItem> items;
   final ValueChanged<WardrobeItem> onItemTap;
-  final VoidCallback onAddFromGallery;
+  final VoidCallback onAddTap;
   final Widget Function(WardrobeItem) imageBuilder;
 
   @override
@@ -572,7 +552,7 @@ class _ItemsView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
-                LucideIcons.plus,
+                LucideIcons.shirt,
                 size: 24,
                 color: AppTheme.textDisabled,
                 semanticLabel: 'Empty closet',
@@ -596,7 +576,7 @@ class _ItemsView extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: onAddFromGallery,
+              onPressed: onAddTap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
@@ -631,39 +611,47 @@ class _ItemsView extends StatelessWidget {
       itemCount: categorized.length,
       itemBuilder: (context, index) {
         final entry = categorized.entries.elementAt(index);
+        final isUncategorized = entry.key == 'Uncategorized';
+        
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
               child: Text(
-                entry.key.toLowerCase(),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
+                isUncategorized
+                    ? 'AI will sort these automatically soon...'
+                    : entry.key.toLowerCase(),
+                style: TextStyle(
+                  fontSize: isUncategorized ? 15 : 20,
+                  fontWeight: isUncategorized ? FontWeight.w500 : FontWeight.bold,
+                  color: isUncategorized ? AppTheme.textSecondary : AppTheme.textPrimary,
                 ),
               ),
             ),
-            SizedBox(
-              height: 175,
-              child: ListView.separated(
+            if (isUncategorized)
+              GridView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.8,
+                ),
                 itemCount: entry.value.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (_, i) {
                   final item = entry.value[i];
                   return Semantics(
                     button: true,
-                    label: '${item.category} item, tap to view details',
+                    label: 'Uncategorized item, tap to view details',
                     child: GestureDetector(
                       onTap: () => onItemTap(item),
                       child: Container(
-                        width: 140,
                         decoration: BoxDecoration(
                           color: AppTheme.surfaceElevated,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: AppTheme.glassBorder,
                           ),
@@ -674,8 +662,39 @@ class _ItemsView extends StatelessWidget {
                     ),
                   );
                 },
+              )
+            else
+              SizedBox(
+                height: 175,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: entry.value.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, i) {
+                    final item = entry.value[i];
+                    return Semantics(
+                      button: true,
+                      label: '${item.category} item, tap to view details',
+                      child: GestureDetector(
+                        onTap: () => onItemTap(item),
+                        child: Container(
+                          width: 140,
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceElevated,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: AppTheme.glassBorder,
+                            ),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: imageBuilder(item),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         );
       },

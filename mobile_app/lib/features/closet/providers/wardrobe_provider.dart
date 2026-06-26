@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:is_my_fit_cooked/core/constants/app_constants.dart';
 import 'package:is_my_fit_cooked/core/services/ai_service.dart';
@@ -46,6 +47,18 @@ class WardrobeNotifier extends Notifier<List<WardrobeItem>> {
       }
     } on Exception catch (_) {
       debugPrint('Failed to load wardrobe data');
+    }
+
+    // INJECT MOCK DATA IF EMPTY FOR UI TESTING
+    if (state.isEmpty) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      state = [
+        WardrobeItem(id: const Uuid().v4(), category: 'T-Shirts', color: 'Black', addedAt: now, image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=500'),
+        WardrobeItem(id: const Uuid().v4(), category: 'T-Shirts', color: 'White', addedAt: now, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=500'),
+        WardrobeItem(id: const Uuid().v4(), category: 'Pants', color: 'Blue Denim', addedAt: now, image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&q=80&w=500'),
+        WardrobeItem(id: const Uuid().v4(), category: 'Shoes', color: 'White', addedAt: now, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=500'),
+      ];
+      _saveItems(state);
     }
   }
 

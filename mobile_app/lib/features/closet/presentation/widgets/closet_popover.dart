@@ -112,8 +112,10 @@ class _PopoverOption extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: SizedBox(
-          height: AppTheme.minTouchTarget,
+        child: Container(
+          constraints: const BoxConstraints(
+            minHeight: AppTheme.minTouchTarget,
+          ),
           child: Row(
             children: [
               Container(

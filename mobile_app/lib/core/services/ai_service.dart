@@ -252,4 +252,98 @@ class AIService {
         .map((e) => Outfit.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  /// Analyzes the user's closet and recommends missing items.
+  Future<Map<String, dynamic>> analyzeClosetGaps(
+    List<Map<String, dynamic>> itemsMetadata,
+  ) async {
+    if (!isConfigured) throw Exception('AI_API_KEY not set.');
+
+    final metadataJson = await compute(jsonEncode, itemsMetadata);
+
+    const systemPrompt =
+        'You are a high-end personal stylist. Analyze the provided JSON metadata of '
+        'the user\'s wardrobe. Identify 3 specific missing clothing items '
+        'that would complete their closet. '
+        'Respond with a raw JSON object containing exactly two keys: '
+        '"message" (string, a short personalized note about their current closet style) '
+        'and "recommendations" (an array of 3 objects, each with "name" (e.g. Beige Trench Coat), '
+        '"reason" (string, why they need it), and "searchQuery" (string, for Google Shopping)).';
+
+    final payload = {
+      'models': ['google/gemma-4-31b-it:free', 'openrouter/free'],
+      'response_format': {'type': 'json_object'},
+      'messages': [
+        {'role': 'system', 'content': systemPrompt},
+        {'role': 'user', 'content': metadataJson},
+      ],
+    };
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl/chat/completions'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_apiKey'},
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode != 200) throw Exception('API Error: ${response.statusCode}');
+    
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final choices = data['choices'] as List<dynamic>?;
+    if (choices == null || choices.isEmpty) throw Exception('Empty response');
+    
+    final content = choices.first['message']['content'] as String?;
+    if (content == null) throw Exception('Empty content');
+
+    return jsonDecode(content) as Map<String, dynamic>;
+  }
+
+  /// Validates a potential purchase against the user's closet.
+  Future<Map<String, dynamic>> validatePurchase(
+    String imageUrl, 
+    List<Map<String, dynamic>> closetMetadata,
+  ) async {
+    if (!isConfigured) throw Exception('AI_API_KEY not set.');
+
+    final metadataJson = await compute(jsonEncode, closetMetadata);
+
+    const systemPrompt =
+        'You are a high-end personal stylist. The user wants to buy the item in the image. '
+        'Compare it against their existing wardrobe JSON. '
+        'Respond with a raw JSON object containing exactly three keys: '
+        '"verdict" (string: either "BUY", "SKIP", or "MAYBE"), '
+        '"reason" (string, 1-2 sentences explaining why based on their closet), '
+        'and "outfitIdea" (string, how they could style it with their existing items).';
+
+    final payload = {
+      'models': ['google/gemma-4-31b-it:free', 'nvidia/nemotron-nano-12b-v2-vl:free', 'openrouter/free'],
+      'response_format': {'type': 'json_object'},
+      'messages': [
+        {'role': 'system', 'content': systemPrompt},
+        {
+          'role': 'user',
+          'content': [
+            {'type': 'text', 'text': 'Closet Metadata: $metadataJson'},
+            {'type': 'image_url', 'image_url': {'url': imageUrl}}
+          ],
+        },
+      ],
+    };
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl/chat/completions'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_apiKey'},
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode != 200) throw Exception('API Error: ${response.statusCode}');
+    
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final choices = data['choices'] as List<dynamic>?;
+    if (choices == null || choices.isEmpty) throw Exception('Empty response');
+    
+    final content = choices.first['message']['content'] as String?;
+    if (content == null) throw Exception('Empty content');
+
+    return jsonDecode(content) as Map<String, dynamic>;
+  }
 }
