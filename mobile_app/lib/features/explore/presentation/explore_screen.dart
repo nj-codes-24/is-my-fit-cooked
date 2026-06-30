@@ -153,7 +153,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                      padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -269,17 +269,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          if (!_isUploading && !state.isValidating) {
-            setState(() => _showPopover = true);
-          }
-        },
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        icon: const Icon(LucideIcons.scan_search, size: 20),
-        label: const Text('Check Fit', style: TextStyle(fontWeight: FontWeight.bold)),
-      ),
     );
   }
 }
@@ -324,8 +313,9 @@ class _RecommendationCard extends StatelessWidget {
                   name,
                   style: const TextStyle(
                     color: AppTheme.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
                   ),
                 ),
               ),
@@ -335,9 +325,9 @@ class _RecommendationCard extends StatelessWidget {
           Text(
             reason,
             style: const TextStyle(
-              color: AppTheme.textSecondary,
+              color: AppTheme.textTertiary,
               fontSize: 15,
-              height: 1.5,
+              height: 1.6,
             ),
           ),
           const SizedBox(height: 20),
@@ -347,10 +337,13 @@ class _RecommendationCard extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onTapShop,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
-                foregroundColor: Colors.white,
+                backgroundColor: Colors.indigoAccent.withValues(alpha: 0.15),
+                foregroundColor: Colors.indigoAccent.shade100,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.indigoAccent.withValues(alpha: 0.2)),
+                ),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
