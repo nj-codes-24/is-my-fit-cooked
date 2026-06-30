@@ -17,6 +17,7 @@ import 'package:is_my_fit_cooked/features/closet/domain/wardrobe_item.dart';
 import 'package:is_my_fit_cooked/features/closet/presentation/widgets/closet_popover.dart';
 import 'package:is_my_fit_cooked/features/closet/presentation/widgets/item_details_modal.dart';
 import 'package:is_my_fit_cooked/features/closet/presentation/widgets/link_input_overlay.dart';
+import 'package:is_my_fit_cooked/features/closet/presentation/widgets/outfit_details_modal.dart';
 import 'package:is_my_fit_cooked/features/closet/providers/wardrobe_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -250,6 +251,17 @@ class _ClosetScreenState extends ConsumerState<ClosetScreen> {
                         isGenerating: _isGenerating,
                         onGenerate: _generateOutfits,
                         imageBuilder: _buildItemImage,
+                        onOutfitTap: (images) {
+                          showGeneralDialog(
+                            context: context,
+                            barrierColor: Colors.transparent,
+                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                OutfitDetailsModal(
+                              images: images,
+                              onClose: () => Navigator.of(context).pop(),
+                            ),
+                          );
+                        },
                       ),
               ),
             ],
@@ -709,6 +721,7 @@ class _OutfitsView extends StatelessWidget {
     required this.isGenerating,
     required this.onGenerate,
     required this.imageBuilder,
+    required this.onOutfitTap,
   });
 
   final List<WardrobeItem> items;
@@ -716,6 +729,7 @@ class _OutfitsView extends StatelessWidget {
   final bool isGenerating;
   final VoidCallback onGenerate;
   final Widget Function(WardrobeItem) imageBuilder;
+  final ValueChanged<List<String>> onOutfitTap;
 
   @override
   Widget build(BuildContext context) {
@@ -726,6 +740,8 @@ class _OutfitsView extends StatelessWidget {
         'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?auto=format&fit=crop&q=80&w=500', // Accessory
         'https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&q=80&w=500', // Bottom
         'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=500', // Shoes
+        'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=500', // Extra 1
+        'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&q=80&w=500', // Extra 2
       ],
       [
         'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=500',
@@ -770,28 +786,37 @@ class _OutfitsView extends StatelessWidget {
       itemCount: dummyGridOutfits.length,
       itemBuilder: (context, index) {
         final outfitImages = dummyGridOutfits[index];
-        return _DummyOutfitTile(images: outfitImages);
+        return _DummyOutfitTile(
+          images: outfitImages,
+          onTap: () => onOutfitTap(outfitImages),
+        );
       },
     ).animate().fadeIn();
   }
 }
 
 class _DummyOutfitTile extends StatelessWidget {
-  const _DummyOutfitTile({required this.images});
+  const _DummyOutfitTile({
+    required this.images,
+    required this.onTap,
+  });
 
   final List<String> images;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceElevated,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppTheme.glassBorder,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceElevated,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppTheme.glassBorder,
+          ),
         ),
-      ),
       child: Column(
         children: [
           Expanded(
@@ -817,7 +842,7 @@ class _DummyOutfitTile extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildImage(String url) {
